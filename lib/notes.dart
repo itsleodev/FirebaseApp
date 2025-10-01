@@ -57,8 +57,14 @@ Future<void> _add() async {
            ),
          );
      createController.clear();
+   } catch (e) {
+     setState(() => message = 'Erro: $e');
+   } finally {
+     if (mounted) setState(() => loading = false);
+   }
+ }
 
- void startInlineEdit(DocumentSnapshot<Map<String, dynamic>> doc) {
+ void _startInlineEdit(DocumentSnapshot<Map<String, dynamic>> doc) {
    final data = doc.data();
    setState(() {
      editingId = doc.id;
@@ -67,7 +73,7 @@ Future<void> _add() async {
    Future.microtask(() => inlineFocus.requestFocus());
  }
 
- void cancelInlineEdit() {
+ void _cancelInlineEdit() {
    setState(() {
      editingId = null;
      inlineController.clear();
@@ -75,7 +81,7 @@ Future<void> _add() async {
    });
  }
 
- Future<void> commitInlineEdit(String docId) async {
+ Future<void> _commitInlineEdit(String docId) async {
    final newText = inlineController.text.trim();
    if (newText.isEmpty) {
      setState(() => message = 'A descrição não pode ser vazia.');
@@ -86,13 +92,13 @@ Future<void> _add() async {
        'description': newText,
        'updatedAt': FieldValue.serverTimestamp(),
      });
-     cancelInlineEdit();
+     _cancelInlineEdit();
    } catch (e) {
      setState(() => message = 'Erro ao atualizar: $e');
    }
  }
 
- Future<void> remove(String docId) async {
+ Future<void> _remove(String docId) async {
    final ok = await showDialog<bool>(
      context: context,
      builder: (_) => AlertDialog(
@@ -112,7 +118,7 @@ Future<void> _add() async {
    );
    if (ok == true) {
      await _col.doc(docId).delete();
-     if (editingId == docId) cancelInlineEdit();
+     if (editingId == docId) _cancelInlineEdit();
    }
  }
 
@@ -201,18 +207,18 @@ Future<void> _add() async {
                                      border: OutlineInputBorder(),
                                    ),
                                    onSubmitted: (_) =>
-                                       commitInlineEdit(doc.id),
+                                       _commitInlineEdit(doc.id),
                                  ),
                                ),
                                const SizedBox(width: 8),
                                IconButton(
                                  tooltip: 'Salvar',
-                                 onPressed: () => commitInlineEdit(doc.id),
+                                 onPressed: () => _commitInlineEdit(doc.id),
                                  icon: const Icon(Icons.check_circle_outline),
                                ),
                                IconButton(
                                  tooltip: 'Cancelar',
-                                 onPressed: cancelInlineEdit,
+                                 onPressed: _cancelInlineEdit,
                                  icon: const Icon(Icons.close),
                                ),
                              ],
@@ -221,11 +227,11 @@ Future<void> _add() async {
                        }
                        return ListTile(
                          title: Text((data['description'] ?? '').toString()),
-                         onTap: () => startInlineEdit(doc),
+                         onTap: () => _startInlineEdit(doc),
                          trailing: IconButton(
                            icon: const Icon(Icons.delete_outline),
                            tooltip: 'Remover',
-                           onPressed: () => remove(doc.id),
+                           onPressed: () => _remove(doc.id),
                          ),
                        );
                      },
